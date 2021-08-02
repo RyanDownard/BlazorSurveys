@@ -1,4 +1,5 @@
 ﻿using BlazorSurveys.Server.Hubs;
+using BlazorSurveys.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System;
@@ -114,8 +115,12 @@ namespace BlazorSurveys.Server.Controllers
         [HttpPost("{surveyId}/answer")]
         public async Task<ActionResult> AnswerSurvey(Guid surveyId, [FromBody] SurveyAnswer answer)
         {
+            
             var survey = surveys.SingleOrDefault(t => t.Id == surveyId);
+
             if (survey == null) return NotFound();
+            if (((IExpirable)survey).IsExpired) return StatusCode(400, "This survey has expired");
+
             // WARNING: this isn’t thread safe since we store answers in a List!
             survey.Answers.Add(new SurveyAnswer
             {

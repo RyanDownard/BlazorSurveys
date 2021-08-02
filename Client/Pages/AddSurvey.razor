@@ -1,0 +1,91 @@
+﻿@page "/add-survey"
+@using BlazorSurveys.Shared
+@using Microsoft.AspNetCore.Components.Forms
+@inject SurveyHttpClient SurveyHttpClient
+@inject NavigationManager NavigationManager
+
+<EditForm EditContext="@editContext" OnSubmit="@OnSubmit">
+    <ObjectGraphDataAnnotationsValidator />
+    <div class="@(editContext.GetValidationMessages().Any() ? "alert alert-danger pb-0" : "")">
+        <ValidationSummary />
+    </div>
+
+
+    <div class="form-group">
+        <label for="inputTitle">Title</label>
+        <InputText id="inputTitle" class="form-control" @bind-Value="survey.Title" />
+    </div>
+    @if (editContext.GetValidationMessages(() => survey.Title).Any())
+    {
+        <div class="invalid-feedback">
+            @editContext.GetValidationMessages(() => survey.Title).First()
+        </div>
+    }
+
+    <div class="form-group">
+        <label for="inputMinutes">Minutes</label>
+        <InputNumber id="inputMinutes" class="form-control" @bind-Value="survey.Minutes" />
+    </div>
+    @if (editContext.GetValidationMessages(() => survey.Minutes).Any())
+    {
+        <div class="invalid-feedback">
+            @editContext.GetValidationMessages(() => survey.Minutes).First()
+        </div>
+    }
+
+    @foreach (var option in survey.Options)
+    {
+        <div class="input-group mb-3">
+            <InputText class="form-control" @bind-Value="option.OptionValue" />
+            <div class="input-group-append">
+                <button class="btn btn-outline-primary" type="button" @onclick="@(() => survey.RemoveOption(option))">Remove</button>
+            </div>
+        </div>
+        @if (editContext.GetValidationMessages(() => option.OptionValue).Any())
+        {
+            <div class="invalid-feedback">
+                @editContext.GetValidationMessages(() => option.OptionValue).First()
+            </div>
+        }
+    }
+    <p>
+        <button class="btn btn-primary" type="button" @onclick="@(() => survey.AddOption())">
+            <i class="oi oi-plus" /> Add Option
+        </button>
+    </p>
+    <p>
+        <button type="submit" class="btn btn-primary float-right">Submit</button>
+    </p>
+</EditForm>
+
+@code {
+    private AddSurveyModel survey = new AddSurveyModel();
+    private EditContext editContext;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        editContext = new EditContext(survey);
+        editContext.SetFieldCssClassProvider(new BootstrapFieldClassProvider());
+    }
+
+    private async Task OnSubmit()
+    {
+        if (!editContext.Validate()) return;
+
+        var response = await SurveyHttpClient.AddSurvey(survey);
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("");
+        }
+    }
+
+    private class BootstrapFieldClassProvider : FieldCssClassProvider
+    {
+        public override string GetFieldCssClass(EditContext editContext, in FieldIdentifier fieldIdentifier)
+        {
+            var isValid = !editContext.GetValidationMessages(fieldIdentifier).Any();
+            return isValid ? "" : "is-invalid";
+        }
+    }
+}

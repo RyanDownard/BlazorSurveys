@@ -25,6 +25,7 @@ else
                             @survey.Title
                         </h5>
                         <button class="btn btn-link pl-0" @onclick="@(() => GoToSurvey(survey.Id))">View Survey</button>
+                        <SurveyExpiration Expirable=survey class="card-text float-right"/>
                     </div>
                 </div>
             </div>
